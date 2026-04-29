@@ -51,16 +51,21 @@ def show_help():
           "  Cupcake automates filename edits and simple duplicate removal for images.\n\n"
           "Fields and controls:\n"
           "  - Path: enter the folder path containing the files to process.\n"
-          "  - Mode (Add / Remove / Auto):\n"
+          "  - Mode (Add / Remove / Auto / Rename):\n"
           "      Add: appends the text from the 'Enter text...' field to filenames.\n"
           "      Remove: removes occurrences of that text from filenames.\n"
           "      Auto: attempts to detect duplicate images and rename or remove accordingly.\n"
           "  - Delete duplicates checkbox: when enabled in Auto mode, duplicate files will be removed.\n\n"
+          "Rename mode:\n"
+          "  - Enter a base name in the text box, then choose Rename.\n"
+          "  - The program renames every file in the selected folder to that base name plus a number.\n"
+          "  - Example: entering 'Image' renames files to Image1, Image2, Image3, and so on.\n\n"
           "Buttons:\n"
           "  - Run: performs the selected operation on the specified path.\n"
           "  - Zip: extracts any .zip files found inside the provided path into folders named after the zip.\n\n"
           "Examples:\n"
           "  - Rename files by adding '_v2': choose Add and enter '_v2' in the text field, set Path, then Run.\n"
+          "  - Rename all files to 'Image1', 'Image2', and so on: choose Rename and enter 'Image', set Path, then Run.\n"
           "  - Remove a suffix: choose Remove, enter the suffix text, set Path, then Run.\n\n"
           "Notes and warnings:\n"
           "  - Always double-check the selected folder. Operations will rename or delete files.\n"
@@ -99,6 +104,8 @@ def folder():
                 add2()
             elif d.get() == 3:
                 add()
+            elif d.get() == 4:
+                rename_files()
             elif d.get() == 2:
                 remove()
             else:
@@ -109,6 +116,8 @@ def folder():
                 add2()
             elif d.get() == 3:
                 add()
+            elif d.get() == 4:
+                rename_files()
             elif d.get() == 2:
                 remove()
             else:
@@ -183,6 +192,31 @@ def add2():
                orfn, file_ext = os.path.splitext(file)
                new_name = "{}{}{}".format(orfn, rem.get(), file_ext).strip()
                os.rename(pa, os.path.join(p, new_name))
+
+
+def rename_files():
+     base_name = rem.get().strip()
+     if not base_name:
+          messagebox.showerror("Error", "Please enter a base name in the text field before renaming.")
+          return
+
+     files = [file for file in os.listdir(p) if os.path.isfile(os.path.join(p, file))]
+     files.sort()
+
+     if not files:
+          return
+
+     temp_names = []
+     for index, file in enumerate(files, start=1):
+          original_path = os.path.join(p, file)
+          temp_name = f"__cupcake_temp_{index}__{file}"
+          temp_path = os.path.join(p, temp_name)
+          os.rename(original_path, temp_path)
+          temp_names.append((temp_path, os.path.splitext(file)[1], index))
+
+     for temp_path, file_ext, index in temp_names:
+          new_name = f"{base_name}{index}{file_ext}"
+          os.rename(temp_path, os.path.join(p, new_name))
      
      
 
@@ -205,17 +239,18 @@ d = IntVar()
 Radiobutton(main_frame, text="Add", variable=d, value=1, anchor=W).grid(row=3, column=0, sticky=W, pady=2)
 Radiobutton(main_frame, text="Remove", variable=d, value=2, anchor=W).grid(row=4, column=0, sticky=W, pady=2)
 Radiobutton(main_frame, text="Auto", variable=d, value=3, anchor=W).grid(row=5, column=0, sticky=W, pady=2)
+Radiobutton(main_frame, text="Rename", variable=d, value=4, anchor=W).grid(row=6, column=0, sticky=W, pady=2)
 def_question = d.get()
 
-l2 = Label(main_frame, text="Enter text you want added/removed (leave blank if n/a):")
-l2.grid(row=6, column=0, sticky="w", pady=(8, 2))
+l2 = Label(main_frame, text="Enter text for add/remove or the base name for rename:")
+l2.grid(row=7, column=0, sticky="w", pady=(8, 2))
 rem = Entry(main_frame, width=60, borderwidth=5)
-rem.grid(row=7, column=0, columnspan=3, sticky="ew", padx=2, pady=4)
+rem.grid(row=8, column=0, columnspan=3, sticky="ew", padx=2, pady=4)
 remo = rem.get().strip()
 
 de = IntVar()
 c = Checkbutton(main_frame, text="Do you wish to delete duplicate files? (Only works in auto mode)", variable=de)
-c.grid(row=8, column=0, columnspan=3, sticky=W, pady=4)
+c.grid(row=9, column=0, columnspan=3, sticky=W, pady=4)
 delete = de.get()
 
 #fo = IntVar()
@@ -224,7 +259,7 @@ delete = de.get()
 #mfolder = fo.get()
 
 def run():
-     if d.get() == 1 or d.get() == 2 or d.get() == 3:
+     if d.get() in (1, 2, 3, 4):
           folder()
      else:
           wrong()
@@ -247,7 +282,7 @@ def remove():
 
 # Centered larger buttons with standout style
 button_container = Frame(main_frame, padx=6, pady=6)
-button_container.grid(row=10, column=1)
+button_container.grid(row=11, column=1)
 submit = Button(
      button_container,
      text="Run",
